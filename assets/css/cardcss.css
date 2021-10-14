@@ -1,0 +1,112 @@
+
+.container-fluid {
+  position: relative;
+
+  -webkit-transform: translateY(0%) translateX(0%);
+          transform: translateY(0%) translateX(0%);
+  text-align: center;
+  width: 100%;
+}
+.cc {
+  border-radius: 8px;
+  box-shadow: 1px 1px 2px -1px rgba(0, 0, 0, 0.7);
+  display: inline-block;
+  height: 190px;
+  margin: 5px;
+  overflow: hidden;
+  position: relative;
+  width: 300px;
+}
+.cc svg {
+  position: absolute;
+  right: 20px;
+  top: 0;
+}
+.cc-data {
+  background-color: transparent;
+  bottom: 0;
+  left: 0;
+  color:#fff;
+  letter-spacing: 1.2px;
+  padding: 15px 25px;
+  position: absolute;
+  text-align: left;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
+}
+.cc-data h3 {
+  font-size: 11px;
+  margin: 5px 0;
+}
+.cc-data .cc-number {
+  font-size: 16px;
+}
+.cc-dates {
+  padding-top: 10px;
+}
+.cc-number .dots {
+  letter-spacing: 2px;
+  color:#ffffff;
+}
+.cc-waves {
+  height: 300px;
+  position: relative;
+  width: 300px;
+  z-index: -1;
+}
+.cc-waves:before,
+.cc-waves:after {
+  border-radius: 50% 50%;
+  content: "";
+  display: block;
+  position: absolute;
+}
+.cc-waves:after {
+  height: 300px;
+  left: 30%;
+  opacity: 0.8;
+  top: 20%;
+  width: 300px;
+}
+.cc-waves:before {
+  height: 360px;
+  left: -5%;
+  top: -70%;
+  width: 360px;
+}
+.cc.default .cc-waves {
+  background: #00629e;
+}
+.cc.default .cc-waves:before,
+.cc.default .cc-waves:after {
+  background: #00629e;
+  background: -webkit-linear-gradient(top, #00629e 0%, rgba(56, 179, 255, 0.4) 100%);
+  background: linear-gradient(to bottom, #00629e 0%, rgba(56, 179, 255, 0.4) 100%);
+}
+.cc.red .cc-waves {
+  background: #c31207;
+}
+.cc.red .cc-waves:before,
+.cc.red .cc-waves:after {
+  background: #c31207;
+  background: -webkit-linear-gradient(top, #c31207 0%, rgba(250, 114, 105, 0.4) 100%);
+  background: linear-gradient(to bottom, #c31207 0%, rgba(250, 114, 105, 0.4) 100%);
+}
+
+
+
+
+
+.cc.null .cc-waves {
+  background: #999999;
+}
+.cc.null .cc-waves:before,
+.cc.null .cc-waves:after {
+  background: #999999;
+ background: linear-gradient(to bottom, #999999 0%, rgba(20, 114, 105, 0.4) 100%);
+  background: linear-gradient(to bottom, #999999 0%, rgba(20, 114, 105, 0.4) 100%);
+}
+.absadd{
+	position:absolute;
+	right:0px;
+	bottom:0px;
+	}

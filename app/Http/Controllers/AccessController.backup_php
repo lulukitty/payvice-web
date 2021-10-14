@@ -1,0 +1,1006 @@
+<?php
+
+/*
+* @author Michel Kalavanda
+* www.iisysgroup.com
+*/
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Vice;
+use Payvice;
+use App\Transaction;
+
+class AccessController extends Controller
+{
+	public $viceUser;
+	public $viceID;
+	public $viceEmail;
+
+	public function __construct(){
+		$this->viceUser = \Session::get('curUsr');
+		$this->viceID = \Session::get('curAcc');
+		$this->viceEmail = \Session::get('curEm');
+	}
+
+	public function payviceHome(){
+
+		$client = new \GuzzleHttp\Client();
+		$res = $client->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_WEBAPI&control=BALANCE&termid='.\Session::get('curAcc').'&userid='.\Session::get('curEm'));
+		if ($res->getStatusCode() == 200) {
+			$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+			$fileContents = trim(str_replace('"', "'", $fileContents));
+			$simpleXml = simplexml_load_string($fileContents);
+			$json = json_encode($simpleXml);
+			$phpArray = json_decode($json, true);
+
+			$getBalance = $phpArray;
+		}
+
+
+		$history = new \GuzzleHttp\Client();
+		$clientHistory = $history->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_WEBAPI&control=RECORDS&termid='.\Session::get('curAcc').'&userid='.\Session::get('curEm'));
+		if ($clientHistory->getStatusCode() == 200) {
+			$cltContents = str_replace(array("\n", "\r", "\t"), '', $clientHistory->getBody()->getContents());
+			$cltContents = trim(str_replace('"', "'", $cltContents));
+			$cltXml = simplexml_load_string($cltContents);
+			$jsonClt = json_encode($cltXml);
+			$cltArray = json_decode($jsonClt, true);
+
+			$getHistory = $cltArray;
+		}
+
+		$block = explode("*", $getHistory['tran']['message']);
+
+		$filter = array_filter($block, function($var){return $var !== ''; } );
+
+		/*print_r($filter);
+		exit();*/	
+		$balance = explode('N', $phpArray['tran']['balance']);
+		return view('dashboard', ['balance' => $balance[1], 'hist' => $filter]);
+	}
+
+
+	public function userAuth(Request $usr){
+		$validate = \Validator::make($usr->all(), [
+			'email' => 'bail|required|email',
+			'password' => 'bail|required'
+			], 
+			[
+			'email.email' => 'Please enter a valid email',
+			'email.required' => 'Email address is required',
+			'password.required' => 'You must enter password to login'
+			]);
+
+		if ($validate->fails())
+			return $validate->message();
+
+
+		/*INIT*/
+		$client = new \GuzzleHttp\Client();
+		$res = $client->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_LOGIN&termid=203301ZA&userid='.$usr->email.'&control=INIT');
+		if ($res->getStatusCode() == 200) {
+			$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+			$fileContents = trim(str_replace('"', "'", $fileContents));
+			$simpleXml = simplexml_load_string($fileContents);
+			$json = json_encode($simpleXml);
+			$phpArray = json_decode($json, true);
+
+			/*print_r($phpArray);
+			exit();*/
+
+
+			if ($phpArray['tran']['result'] == 1) {
+				return $phpArray['tran']['message'];
+			}else{
+				$usrTID = $phpArray['tran']['macros_tid'];
+				$getKey = explode('|', $phpArray['tran']['message']);
+				$key = $getKey[1];
+
+				$tidArray = str_split($usrTID);
+				$createClrKey = "";
+
+				foreach ($tidArray as $tidChar) {
+					if (!is_numeric($tidChar))
+						$tidChar = 7;
+					$createClrKey .= substr($key, $tidChar, 1);
+
+				}
+
+				$hex = hex2bin($createClrKey);
+				$pass = $hex.$usr->password;
+
+
+				$encryptedPassword = hash('SHA256', $pass);
+
+				$usr->session()->put('usrKeyPass', $encryptedPassword);
+
+				/*echo $encryptedPassword.'<br> >>>>>'.$createClrKey;
+				exit();*/
+
+				$login = new \GuzzleHttp\Client();
+				$res = $login->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_LOGIN&termid='.$usrTID.'&userid='.$usr->email.'&password='.$encryptedPassword);
+				if ($res->getStatusCode() == 200) {
+					$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+					$fileContents = trim(str_replace('"', "'", $fileContents));
+					$simpleXml = simplexml_load_string($fileContents);
+					$json = json_encode($simpleXml);
+					$phpArray = json_decode($json, true);
+
+					/*print_r($phpArray);
+					exit();*/
+
+
+					if ($phpArray['tran']['result'] == 1)
+						return $phpArray['tran']['message'];
+
+					$userData = explode("|", $phpArray['tran']['message']);
+
+					$userCredentials = [
+					'email' => $userData[5],
+					'name' =>  $userData[0],
+					'account' => $userData[2]
+					];
+
+					$name = explode('<macros>', $userData[0]);
+
+					$usr->session()->put('curUsr', $name[0]);
+					$usr->session()->put('curAcc', $userData[2]);
+					$usr->session()->put('curEm', $userData[5]);
+
+
+
+					return "success";
+
+				}
+
+			}
+		}
+
+	}
+
+
+
+	public function flushAuthUser(){
+		
+		\Session::flush();
+
+		return redirect('/');
+	}
+
+
+
+	public function purchaseAirtime(Request $purchase){
+		$keyClr = hex2bin($purchase->session()->get('usrKeyPass'));
+		$pin = hash('SHA256', $keyClr.$purchase->pin);
+
+		$topupdata = "action=TAMS_WEBAPI&op=EXCHANGE&termid=".$purchase->session()->get('curAcc')."&";
+		$topupdata .= "userid=".$purchase->session()->get('curEm')."&pin=".$pin."&amount=".$purchase->amount."&";
+		$topupdata .= "phoneno=".$purchase->phone."&network=".$purchase->network."&";
+		$topupdata .= "convenience=";
+
+		$login = new \GuzzleHttp\Client();
+		$res = $login->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?'.$topupdata);
+		if ($res->getStatusCode() == 200) {
+
+			$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+			$fileContents = trim(str_replace('"', "'", $fileContents));
+			$simpleXml = simplexml_load_string($fileContents);
+			$json = json_encode($simpleXml);
+			$phpArray = json_decode($json, true);
+			
+			if ($phpArray['tran']['result'] == 0) {
+				return 'success';
+			}else{
+				return $phpArray['tran']['message'];
+			}
+		}
+	}
+	
+	
+	public function getAirtime(){
+		
+		$client = new \GuzzleHttp\Client();
+		$res = $client->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_WEBAPI&control=BALANCE&termid='.\Session::get('curAcc').'&userid='.\Session::get('curEm'));
+		if ($res->getStatusCode() == 200) {
+			$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+			$fileContents = trim(str_replace('"', "'", $fileContents));
+			$simpleXml = simplexml_load_string($fileContents);
+			$json = json_encode($simpleXml);
+			$phpArray = json_decode($json, true);
+
+			$getBalance = $phpArray;
+		}
+
+
+		$history = new \GuzzleHttp\Client();
+		$clientHistory = $history->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_WEBAPI&control=RECORDS&termid='.\Session::get('curAcc').'&userid='.\Session::get('curEm'));
+		if ($clientHistory->getStatusCode() == 200) {
+			$cltContents = str_replace(array("\n", "\r", "\t"), '', $clientHistory->getBody()->getContents());
+			$cltContents = trim(str_replace('"', "'", $cltContents));
+			$cltXml = simplexml_load_string($cltContents);
+			$jsonClt = json_encode($cltXml);
+			$cltArray = json_decode($jsonClt, true);
+
+			$getHistory = $cltArray;
+		}
+
+		$block = explode("*", $getHistory['tran']['message']);
+
+		$filter = array_filter($block, function($var){return $var !== ''; } );
+
+		/*print_r($filter);
+		exit();*/	
+		$balance = explode('N', $phpArray['tran']['balance']);
+		return view('airtime', ['balance' => $balance[1], 'hist' => $filter]);
+		
+	}
+
+
+
+		//PAY BILL
+	public function getPayBills(){
+		
+		$client = new \GuzzleHttp\Client();
+		$res = $client->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_WEBAPI&control=BALANCE&termid='.\Session::get('curAcc').'&userid='.\Session::get('curEm'));
+		if ($res->getStatusCode() == 200) {
+			$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+			$fileContents = trim(str_replace('"', "'", $fileContents));
+			$simpleXml = simplexml_load_string($fileContents);
+			$json = json_encode($simpleXml);
+			$phpArray = json_decode($json, true);
+
+			$getBalance = $phpArray;
+		}
+
+
+		$history = new \GuzzleHttp\Client();
+		$clientHistory = $history->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_WEBAPI&control=RECORDS&termid='.\Session::get('curAcc').'&userid='.\Session::get('curEm'));
+		if ($clientHistory->getStatusCode() == 200) {
+			$cltContents = str_replace(array("\n", "\r", "\t"), '', $clientHistory->getBody()->getContents());
+			$cltContents = trim(str_replace('"', "'", $cltContents));
+			$cltXml = simplexml_load_string($cltContents);
+			$jsonClt = json_encode($cltXml);
+			$cltArray = json_decode($jsonClt, true);
+
+			$getHistory = $cltArray;
+		}
+
+		$block = explode("*", $getHistory['tran']['message']);
+
+		$filter = array_filter($block, function($var){return $var !== ''; } );
+
+		/*print_r($filter);
+		exit();*/	
+		$balance = explode('N', $phpArray['tran']['balance']);
+		return view('paybills', ['balance' => $balance[1], 'hist' => $filter]);
+		
+	}
+
+		//HISTORY 
+	public function getTrHistory(){
+		
+		$client = new \GuzzleHttp\Client();
+		$res = $client->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_WEBAPI&control=BALANCE&termid='.\Session::get('curAcc').'&userid='.\Session::get('curEm'));
+		if ($res->getStatusCode() == 200) {
+			$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+			$fileContents = trim(str_replace('"', "'", $fileContents));
+			$simpleXml = simplexml_load_string($fileContents);
+			$json = json_encode($simpleXml);
+			$phpArray = json_decode($json, true);
+
+			$getBalance = $phpArray;
+		}
+
+
+		$history = new \GuzzleHttp\Client();
+		$clientHistory = $history->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_WEBAPI&control=RECORDS&termid='.\Session::get('curAcc').'&userid='.\Session::get('curEm'));
+		if ($clientHistory->getStatusCode() == 200) {
+			$cltContents = str_replace(array("\n", "\r", "\t"), '', $clientHistory->getBody()->getContents());
+			$cltContents = trim(str_replace('"', "'", $cltContents));
+			$cltXml = simplexml_load_string($cltContents);
+			$jsonClt = json_encode($cltXml);
+			$cltArray = json_decode($jsonClt, true);
+
+			$getHistory = $cltArray;
+		}
+
+		$block = explode("*", $getHistory['tran']['message']);
+
+		$filter = array_filter($block, function($var){return $var !== ''; } );
+
+		/*print_r($filter);
+		exit();*/	
+		$balance = explode('N', $phpArray['tran']['balance']);
+		return view('trhistory', ['balance' => $balance[1], 'hist' => $filter]);
+		
+	}
+
+
+
+			//HISTORY API FOR PAYVICE MOBILE
+	public function getTrHistoryForMobile($tid, $useremail){
+		
+		/*$client = new \GuzzleHttp\Client();
+		$res = $client->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_WEBAPI&control=BALANCE&termid='.$tid.'&userid='.$useremail;
+			if ($res->getStatusCode() == 200) {
+				$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+				$fileContents = trim(str_replace('"', "'", $fileContents));
+				$simpleXml = simplexml_load_string($fileContents);
+				$json = json_encode($simpleXml);
+				$phpArray = json_decode($json, true);
+
+				$getBalance = $phpArray;
+			}*/
+
+
+			$history = new \GuzzleHttp\Client();
+			$clientHistory = $history->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_WEBAPI&control=RECORDS&termid='.$tid.'&userid='.$useremail);
+			if ($clientHistory->getStatusCode() == 200) {
+				$cltContents = str_replace(array("\n", "\r", "\t"), '', $clientHistory->getBody()->getContents());
+				$cltContents = trim(str_replace('"', "'", $cltContents));
+				$cltXml = simplexml_load_string($cltContents);
+				$jsonClt = json_encode($cltXml);
+				$cltArray = json_decode($jsonClt, true);
+
+				$getHistory = $cltArray;
+			}
+
+			$block = explode("*", $getHistory['tran']['message']);
+			$filter = array_filter($block, function($var){return $var !== ''; } );
+
+			$jsonResponse = [];
+			foreach ($filter as $value) {
+				if (substr_count($value, '|') <= 7) {
+					$val = explode('|', $expl);
+
+					$finalArray['amount'] = $val[1];
+					$finalArray['type'] = $val[0];
+					$finalArray['service'] = $val[2];
+					$finalArray['beneficiary'] = $val[6];
+					$finalArray['ref'] = $val[5];
+					$finalArray['date'] = $val[7];
+				}else{
+					$val = explode($value, '|');
+
+					$finalArray['amount'] = $val[1];
+					$finalArray['type'] = $val[0];
+					$finalArray['service'] = $val[2];
+					$finalArray['beneficiary'] = $val[6];
+					$finalArray['ref'] = $val[5];
+					$finalArray['date'] = $val[7];
+					$finalArray['status'] = $val[8];
+				}
+			}
+			
+
+			return json_encode($jsonResponse);
+
+		}
+
+
+
+
+		//SETTINGS 
+		public function getUserSettings(){
+
+			$client = new \GuzzleHttp\Client();
+			$res = $client->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_WEBAPI&control=BALANCE&termid='.\Session::get('curAcc').'&userid='.\Session::get('curEm'));
+			if ($res->getStatusCode() == 200) {
+				$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+				$fileContents = trim(str_replace('"', "'", $fileContents));
+				$simpleXml = simplexml_load_string($fileContents);
+				$json = json_encode($simpleXml);
+				$phpArray = json_decode($json, true);
+
+				$getBalance = $phpArray;
+			}
+
+
+			$history = new \GuzzleHttp\Client();
+			$clientHistory = $history->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_WEBAPI&control=RECORDS&termid='.\Session::get('curAcc').'&userid='.\Session::get('curEm'));
+			if ($clientHistory->getStatusCode() == 200) {
+				$cltContents = str_replace(array("\n", "\r", "\t"), '', $clientHistory->getBody()->getContents());
+				$cltContents = trim(str_replace('"', "'", $cltContents));
+				$cltXml = simplexml_load_string($cltContents);
+				$jsonClt = json_encode($cltXml);
+				$cltArray = json_decode($jsonClt, true);
+
+				$getHistory = $cltArray;
+			}
+
+			$block = explode("*", $getHistory['tran']['message']);
+
+			$filter = array_filter($block, function($var){return $var !== ''; } );
+
+		/*print_r($filter);
+		exit();*/	
+		$balance = explode('N', $phpArray['tran']['balance']);
+		return view('settings', ['balance' => $balance[1], 'hist' => $filter]);
+		
+	}
+
+
+
+	public function processApiCall(Request $request){
+
+		$data = json_decode($request->getContent(), true);
+
+	/* vice_id = terminal
+	 * user_name = username
+	 * amount = amount
+	 * phone = phone number
+	 * service = network
+	 * auth = transaction PIN
+	 * token = env('VICE_KEY')
+	 * pwd = base64_encode(4831!password) //where password is user password
+	*/
+
+	if (count($data) < 7) 
+		return response()->json(['status' => 0, 'message' => 'Unauthorized API call']);
+	if ($data['token'] != env('VICE_KEY')) 
+		return response()->json(['status' => 0, 'message' => 'Unauthorized API call']);
+
+
+
+	/*INIT*/
+	$client = new \GuzzleHttp\Client();
+	$res = $client->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_LOGIN&termid=203301ZA&userid='.$data['user_name'].'&control=INIT');
+	if ($res->getStatusCode() == 200) {
+		$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+		$fileContents = trim(str_replace('"', "'", $fileContents));
+		$simpleXml = simplexml_load_string($fileContents);
+		$json = json_encode($simpleXml);
+		$phpArray = json_decode($json, true);
+
+			/*print_r($phpArray);
+			exit();*/
+
+
+			if ($phpArray['tran']['result'] == 1) {
+				return $phpArray['tran']['message'];
+			}else{
+				$usrTID = $data['vice_id'];
+				$getKey = explode('|', $phpArray['tran']['message']);
+				$key = $getKey[1];
+
+				$tidArray = str_split($usrTID);
+				$createClrKey = "";
+
+				foreach ($tidArray as $tidChar) {
+					if (!is_numeric($tidChar))
+						$tidChar = 7;
+					$createClrKey .= substr($key, $tidChar, 1);
+
+				}
+
+				$getUsrPass = str_replace('4831!', '', base64_decode($data['pwd']));
+
+				$hex = hex2bin($createClrKey);
+				$pass = $hex.$getUsrPass;
+
+
+				$encryptedPassword = hash('SHA256', $pass);
+
+				//$request->session()->put('usrKeyPass', $encryptedPassword);
+
+				/*echo $encryptedPassword.'<br> >>>>>'.$createClrKey;
+				exit();*/
+
+				$login = new \GuzzleHttp\Client();
+				$res = $login->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_LOGIN&termid='.$usrTID.'&userid='.$data['user_name'].'&password='.$encryptedPassword);
+				if ($res->getStatusCode() == 200) {
+					$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+					$fileContents = trim(str_replace('"', "'", $fileContents));
+					$simpleXml = simplexml_load_string($fileContents);
+					$json = json_encode($simpleXml);
+					$phpArray = json_decode($json, true);
+
+
+					if ($phpArray['tran']['result'] == 1)
+						return $phpArray['tran']['message'];
+
+					$userData = explode("|", $phpArray['tran']['message']);
+
+					$userCredentials = [
+					'email' => $userData[5],
+					'name' =>  $userData[0],
+					'account' => $userData[2]
+					];
+
+					$name = explode('<macros>', $userData[0]);
+
+					/*$request->session()->put('curUsr', $name[0]);
+					$request->session()->put('curAcc', $userData[2]);
+					$request->session()->put('curEm', $userData[5]);
+*/
+					$keyClr = hex2bin($encryptedPassword);
+					$pin = hash('SHA256', $keyClr.$data['auth']);
+
+					$topupdata = "action=TAMS_WEBAPI&op=EXCHANGE&termid=".$data['vice_id']."&";
+					$topupdata .= "userid=".$data['user_name']."&pin=".$pin."&amount=".$data['amount']."&";
+					$topupdata .= "phoneno=".$data['phone']."&network=".$data['service']."&";
+					$topupdata .= "convenience=";
+
+					$login = new \GuzzleHttp\Client();
+					$res = $login->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?'.$topupdata);
+					if ($res->getStatusCode() == 200) {
+
+						$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+						$fileContents = trim(str_replace('"', "'", $fileContents));
+						$simpleXml = simplexml_load_string($fileContents);
+						$json = json_encode($simpleXml);
+						$phpArray = json_decode($json, true);
+
+						if ($phpArray['tran']['result'] == 0) {
+							return response()->json(
+								[
+								"message" => "Topup completed successfully",
+								"status" => 1,
+								"result" => "success"
+								]
+								);
+						}else{
+							return response()->json(
+								[
+								"message" => $phpArray['tran']['message'],
+								"status" => 0,
+								"result" => "failed"
+								]
+								);
+
+						}
+					}
+
+				}
+
+			}
+		}
+
+
+
+
+	}
+
+
+	/*INITIATE LOOKUP CALL - FOR VISIONTEK API CALL*/
+	public function lookup(Request $req){
+		$data = json_decode($req->getContent(), true);
+		/*INIT*/
+		$client = new \GuzzleHttp\Client();
+		$res = $client->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_LOGIN&termid=203301ZA&userid='.$data['user_name'].'&control=INIT');
+		if ($res->getStatusCode() == 200) {
+			$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+			$fileContents = trim(str_replace('"', "'", $fileContents));
+			$simpleXml = simplexml_load_string($fileContents);
+			$json = json_encode($simpleXml);
+			$phpArray = json_decode($json, true);
+
+			/*print_r($phpArray);
+			exit();*/
+
+
+			if ($phpArray['tran']['result'] == 1) {
+
+				return response()->json(['status' => 0, 'message' => 'Invalid credentials']);
+
+			}else{
+
+				$usrTID = $phpArray['tran']['macros_tid'];
+				$clr = env('V_TEK');
+				$hash = hash('SHA256', $usrTID.$clr.date('Y-m-d H:i'));
+
+				if ($usrTID != $data['vice_id']) {
+					return response()->json(['status' => 0, 'message' => 'Unknown vice ID']);
+				}else{
+
+					if (count(Vice::where('vice_id', $usrTID)->first()) > 0) {
+						
+						if (Vice::where('vice_id', $usrTID)->update(['token' => $hash, 'created_at' => date('Y-m-d H:i:s', time()), 'status' => 0])) {
+							return response()->json([
+								'vice_id' => $usrTID,
+								'token' => $hash,
+								'status' => 0,
+								'message' => 'Authenticated successfully'
+								]);
+						}
+						
+					}else{
+
+						$vice = new Vice;
+						$vice->token = $hash;
+						$vice->vice_id = $usrTID;
+						$vice->status = 0;
+
+						if ($vice->save()) {
+							return response()->json([
+								'vice_id' => $usrTID,
+								'token' => $hash,
+								'status' => 1,
+								'message' => 'Authenticated successfully'
+								]);
+						}
+					}
+					
+					
+				}
+				
+				
+			}
+
+			
+		}
+	}
+
+
+	/*VISIONTEK - API CALL*/
+	public function processApiCallVisionTek(Request $request){
+
+		$data = json_decode($request->getContent(), true);
+
+	/* vice_id = terminal
+	 * user_name = username
+	 * amount = amount
+	 * phone = phone number
+	 * service = network
+	 * auth = transaction PIN
+	 * token = env('VICE_KEY')
+	 * pwd = base64_encode(4831!password) //where password is user password
+	*/
+
+	if (count($data) < 7) {
+		return response()->json(['status' => 0, 'message' => 'Unauthorized API call']);
+	}
+
+	$getToken = Vice::where('token', $data['token'])->where('vice_id', $data['vice_id'])->first();
+
+	if (count($getToken) > 0) {
+		if (Payvice::tokenExpiration($getToken->created_at) == true){
+			//Payvice::timeAgo(strtotime($getToken->created_at)) >= 2
+			return response()->json(['status' => 0, 'message' => 'Unauthorized API call. Token expired']);
+		}
+
+		if ($getToken->status == 1) {
+			return response()->json(['status' => 0, 'message' => 'Unauthorized API call. Token already used']);
+		}
+
+
+		if ($data['service'] != "MTNVTU"){
+			return response()->json(['status' => 0, 'message' => 'Unauthorized Service. Token allowed for MTN only']);
+
+		}
+
+		/*START*/
+
+		/*INIT*/
+		$client = new \GuzzleHttp\Client();
+		$res = $client->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_LOGIN&termid=203301ZA&userid='.$data['user_name'].'&control=INIT');
+		if ($res->getStatusCode() == 200) {
+			$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+			$fileContents = trim(str_replace('"', "'", $fileContents));
+			$simpleXml = simplexml_load_string($fileContents);
+			$json = json_encode($simpleXml);
+			$phpArray = json_decode($json, true);
+
+			/*print_r($phpArray);
+			exit();*/
+
+
+			if ($phpArray['tran']['result'] == 1) {
+				return response()->json(['status' => 0, 'message' => $phpArray['tran']['message']]);
+			}else if($phpArray['tran']['result'] == 'E'){
+				return response()->json(['status' => 0, 'message' => $phpArray['tran']['message']]);
+			}else{
+				$usrTID = $data['vice_id'];
+				$getKey = explode('|', $phpArray['tran']['message']);
+				$key = $getKey[1];
+
+				$tidArray = str_split($usrTID);
+				$createClrKey = "";
+
+				foreach ($tidArray as $tidChar) {
+					if (!is_numeric($tidChar))
+						$tidChar = 7;
+					$createClrKey .= substr($key, $tidChar, 1);
+
+				}
+
+				$getUsrPass = $data['pwd'];
+
+				$hex = hex2bin($createClrKey);
+				$pass = $hex.$getUsrPass;
+
+
+				$encryptedPassword = hash('SHA256', $pass);
+
+				//$request->session()->put('usrKeyPass', $encryptedPassword);
+
+				/*echo $encryptedPassword.'<br> >>>>>'.$createClrKey;
+				exit();*/
+
+				$login = new \GuzzleHttp\Client();
+				$res = $login->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_LOGIN&termid='.$usrTID.'&userid='.$data['user_name'].'&password='.$encryptedPassword);
+				if ($res->getStatusCode() == 200) {
+					$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+					$fileContents = trim(str_replace('"', "'", $fileContents));
+					$simpleXml = simplexml_load_string($fileContents);
+					$json = json_encode($simpleXml);
+					$phpArray = json_decode($json, true);
+
+
+					if ($phpArray['tran']['result'] == 1){
+						return response()->json(['status' => 0, 'message' => $phpArray['tran']['message']]);
+					}
+
+
+					$userData = explode("|", $phpArray['tran']['message']);
+
+					$userCredentials = [
+					'email' => $userData[5],
+					'name' =>  $userData[0],
+					'account' => $userData[2]
+					];
+
+					$name = explode('<macros>', $userData[0]);
+
+					/*$request->session()->put('curUsr', $name[0]);
+					$request->session()->put('curAcc', $userData[2]);
+					$request->session()->put('curEm', $userData[5]);
+*/
+					$keyClr = hex2bin($encryptedPassword);
+					$pin = hash('SHA256', $keyClr.$data['auth']);
+
+					$topupdata = "action=TAMS_WEBAPI&op=EXCHANGE&termid=".$data['vice_id']."&";
+					$topupdata .= "userid=".$data['user_name']."&pin=".$pin."&amount=".$data['amount']."&";
+					$topupdata .= "phoneno=".$data['phone']."&network=".$data['service']."&";
+					$topupdata .= "convenience=";
+
+					$login = new \GuzzleHttp\Client();
+					$res = $login->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?'.$topupdata);
+					if ($res->getStatusCode() == 200) {
+
+						$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+						$fileContents = trim(str_replace('"', "'", $fileContents));
+						$simpleXml = simplexml_load_string($fileContents);
+						$json = json_encode($simpleXml);
+						$phpArray = json_decode($json, true);
+
+						if ($phpArray['tran']['result'] == "0") {
+
+							Vice::where('vice_id', $usrTID)->where('token', $data['token'])->update(['status' => 1]);
+							$txnRef = uniqid();
+							
+							$txn = ['token' => $data['token'], 'vice' => $data['vice_id'], 'ref' => $txnRef, 'status' => 1];
+							Transaction::create($txn);
+							return response()->json(
+								[
+								"message" => "Topup completed successfully",
+								"status" => 1,
+								"date" => date('d/m/Y H:i:s', time()),
+								"txn_ref" => $txnRef
+								]
+								);
+						}else{
+							$txnRef = uniqid();
+							Vice::where('vice_id', $usrTID)->where('token', $data['token'])->update(['status' => 1]);
+							$txn = ['token' => $data['token'], 'vice' => $data['vice_id'], 'ref' => $txnRef, 'status' => 0];
+							Transaction::create($txn);
+							return response()->json(
+								[
+								"message" => $phpArray['tran']['message'],
+								"status" => 0,
+								"date" => date('d/m/Y H:i:s', time()),
+								"txn_ref" => $txnRef
+								]
+								);
+
+						}
+					}
+
+				}
+
+			}
+		}
+		/*END*/
+	}else{
+		return response()->json(['status' => 0, 'message' => 'Failed. Please check your token/Vice ID']);
+	}
+	
+	
+
+}
+
+
+/*
+* Requery previous request
+*/
+public function requeryTxn(Request $req){
+	$data = json_decode($req->getContent(), true);
+	$stat = "";
+	$msg = "";
+	$status = Transaction::where('token', $data['token'])->where('vice', $data['vice_id'])->first();
+
+
+	if (count($status) > 0) {
+		if ($status->status == "1") {
+			$stat = "approved";
+			$msg = "Transaction was successful";
+		}else{
+			$stat = "declined";
+		}
+
+		return response()->json([
+			'status' => 1,
+			'txn_status' => $stat,
+			'txn_date' => date('d/m/Y H:i:s', strtotime($status->created_at)),
+			'vice_id' => $status->vice,
+			'txn_token' => $status->token,
+			'date' => date('d/m/Y H:i:s', time())
+			]);
+	}else{
+		return response()->json([
+			'status' => 0,
+			'date' => date('d/m/Y H:i:s', time()),
+			'message' => "Invalid token/vice id"
+			]);
+	}
+	
+
+}
+
+
+public function ikedcAgent(Request $ie){
+	$data = json_decode($ie->getContent(), true);
+	/*INIT*/
+	$client = new \GuzzleHttp\Client();
+	$res = $client->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_LOGIN&termid=203301ZA&userid='.$data['vice_id'].'&control=INIT');
+	if ($res->getStatusCode() == 200) {
+		$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+		$fileContents = trim(str_replace('"', "'", $fileContents));
+		$simpleXml = simplexml_load_string($fileContents);
+		$json = json_encode($simpleXml);
+		$phpArray = json_decode($json, true);
+
+			/*print_r($phpArray);
+			exit();*/
+
+
+			if ($phpArray['tran']['result'] == 1) {
+				return json_encode(['auth' => "1", 'message' => $phpArray['tran']['message']]);
+			}else{
+				$usrTID = $data['vice_tid'];
+				//$phpArray['tran']['macros_tid'];
+				$getKey = explode('|', $phpArray['tran']['message']);
+				$key = $getKey[1];
+				$tidArray = str_split($usrTID);
+				$createClrKey = "";
+
+				foreach ($tidArray as $tidChar) {
+					if (!is_numeric($tidChar))
+						$tidChar = 7;
+					$createClrKey .= substr($key, $tidChar, 1);
+
+				}
+
+				$hex = hex2bin($createClrKey);
+				$pass = $hex.$data['vice_pwd'];
+
+
+				$encryptedPassword = hash('SHA256', $pass);
+
+				$login = new \GuzzleHttp\Client();
+				$res = $login->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_LOGIN&termid='.$usrTID.'&userid='.$data['vice_id'].'&password='.$encryptedPassword);
+				if ($res->getStatusCode() == 200) {
+					$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+					$fileContents = trim(str_replace('"', "'", $fileContents));
+					$simpleXml = simplexml_load_string($fileContents);
+					$json = json_encode($simpleXml);
+					$phpArray = json_decode($json, true);
+
+					/*print_r($phpArray);
+					exit();*/
+
+
+					if ($phpArray['tran']['result'] == 1){
+						return json_encode(['auth' => "1", 'message' => $phpArray['tran']['message']]);
+					}else{
+
+						$post = ['tid' => $data['vice_tid']];
+						$client = new \GuzzleHttp\Client();
+						$res = $client->post('http://197.253.19.75/tams/eftpos/op/agent_get_balance.php', ['json' => $post]);
+						if ($res->getStatusCode() == 200) {
+							print_r($res->getBody()->getContents());
+						}
+
+					}
+
+				}
+
+			}
+		}
+
+
+	}
+
+
+
+	/*UPDATE AGENT WALLET AFTER IKEDC*/
+
+	public function lowerAgentWallet(Request $req){
+		$data = json_decode($req->getContent(), true);
+		$client = new \GuzzleHttp\Client();
+		print_r($data);
+		$res = $client->post('http://197.253.19.75/tams/eftpos/op/bal_update.php', ['json' => $data]);
+		/*if ($res->getStatusCode() == 200) {
+			print_r($res->getBody()->getContents());
+		}*/
+	}
+
+
+	/*GET AGENT TRANSACTION HISTORY*/
+	public function getAgentTran(){
+		$wallet = $_GET['id'];
+		$email = $_GET['email'];
+
+		$history = new \GuzzleHttp\Client();
+		$clientHistory = $history->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_WEBAPI&control=RECORDS&termid='.$wallet.'&userid='.$email);
+		if ($clientHistory->getStatusCode() == 200) {
+			$cltContents = str_replace(array("\n", "\r", "\t"), '', $clientHistory->getBody()->getContents());
+			$cltContents = trim(str_replace('"', "'", $cltContents));
+			$cltXml = simplexml_load_string($cltContents);
+			$jsonClt = json_encode($cltXml);
+			$cltArray = json_decode($jsonClt, true);
+
+			$getHistory = $cltArray;
+		}
+
+		$block = explode("*", $getHistory['tran']['message']);
+
+		$filter = array_filter($block, function($var){return $var !== ''; } );
+
+
+		$client = new \GuzzleHttp\Client();
+		$res = $client->post('http://197.253.19.75/ctms/eftpos/devinterface/transactionadvice.php?action=TAMS_WEBAPI&control=BALANCE&termid='.$wallet.'&userid='.$email);
+		if ($res->getStatusCode() == 200) {
+			$fileContents = str_replace(array("\n", "\r", "\t"), '', $res->getBody()->getContents());
+			$fileContents = trim(str_replace('"', "'", $fileContents));
+			$simpleXml = simplexml_load_string($fileContents);
+			$json = json_encode($simpleXml);
+			$phpArray = json_decode($json, true);
+
+			$getBalance = $phpArray;
+		}
+
+		$balance = explode('N', $phpArray['tran']['balance']);
+
+		return view('agent', ['hist' => $filter, 'bal' => $balance[1]]);
+	}
+
+
+	public function getAllSubAgents(){
+		$wallet = $_GET['id'];
+
+		$history = new \GuzzleHttp\Client();
+		$clientHistory = $history->post('http://197.253.19.75/tams/eftpos/devinterface/transactionadvice.php?action=PAYVICE_SUB_AGENT&termid=203301ZA&vice_id='.$wallet);
+		if ($clientHistory->getStatusCode() == 200) {
+			$cltContents = str_replace(array("\n", "\r", "\t"), '', $clientHistory->getBody()->getContents());
+			$cltContents = trim(str_replace('"', "'", $cltContents));
+			$cltXml = simplexml_load_string($cltContents);
+			$jsonClt = json_encode($cltXml);
+			$cltArray = json_decode($jsonClt, true);
+
+			$ag = [];
+
+			foreach ($cltArray['efttran'] as $msg) {
+				$mg = json_decode($msg, true);
+				array_push($ag, $mg);				
+			}
+
+			$filter = array_filter($ag, function($var){return $var !== ''; } );
+			return view('list-agent', ['list' => $filter]);
+		}
+	}
+
+
+}

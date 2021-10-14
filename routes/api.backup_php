@@ -1,0 +1,49 @@
+<?php
+
+use Illuminate\Http\Request;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| is assigned the "api" middleware group. Enjoy building your API!
+|
+*/
+
+/*Route::middleware('auth:api')->get('/user', function (Request $request) {
+    return $request->user();
+});*/
+
+
+Route::get('/', function(){
+	return response()->json(['status' => 'Failed', 'message' => 'Authentication required']);
+	//base64_encode("4831!2017Pay\$DEV");
+});
+
+Route::post('/', function(Request $req){
+	///return $req->getContent();
+	return response()->json(['status' => 0, 'message' => 'Authentication required']);
+});
+
+Route::get('/{val}', function($val){
+	if ($val != "tran") {
+		return response()->json(['status' => 0, 'message' => 'Authentication required']);
+	}
+	
+});
+
+Route::post('/{val}', function(Request $req){
+	if ($val != "tran") {
+		return response()->json(['status' => 0, 'message' => 'Authentication required']);
+	}
+});
+
+Route::post('/tran/purchase', 'AccessController@processApiCall');
+Route::post('/tran/auth0/lookup', 'AccessController@lookup');
+Route::post('/tran/auth0/purchase', 'AccessController@processApiCallVisionTek');
+Route::post('/tran/auth0/requery', 'AccessController@requeryTxn');
+Route::post('/tran/auth0/ie', 'AccessController@ikedcAgent');
+Route::post('/tran/auth0/walletBal', 'AccessController@lowerAgentWallet');
