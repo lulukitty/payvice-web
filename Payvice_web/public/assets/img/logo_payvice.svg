@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="158px" height="43px" viewBox="0 0 158 43" enable-background="new 0 0 158 43" xml:space="preserve">
+<g id="Layer_8">
+	
+		<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="-708.4282" y1="-540.6807" x2="-721.6686" y2="-563.6133" gradientTransform="matrix(1 0 0 -1 732.9453 -532.6406)">
+		<stop  offset="0" style="stop-color:#1B388B"/>
+		<stop  offset="1" style="stop-color:#286EB0"/>
+	</linearGradient>
+	<path fill="url(#SVGID_1_)" d="M5.538,8.305V17.3c0,0,13.348-0.063,16.222,0c3.465,0.073,5.088,6.489,0,7.005
+		c-1.99,0.202-6.709,0-6.709,0v8.848c0,0,5.037,0.1,6.709,0c16.588-0.957,16-24.108,0-24.845C17.708,8.119,8.636,8.305,5.538,8.305z
+		"/>
+	
+		<linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="-715.7495" y1="-558.1421" x2="-725.808" y2="-575.5641" gradientTransform="matrix(1 0 0 -1 732.9453 -532.6406)">
+		<stop  offset="0" style="stop-color:#1B388B"/>
+		<stop  offset="1" style="stop-color:#286EB0"/>
+	</linearGradient>
+	<polygon fill="url(#SVGID_2_)" points="5.538,32.784 5.538,42 15.124,42 15.124,24.305 	"/>
+	<text transform="matrix(1 0 0 1 35.1899 31.7168)" fill="#1B388B" font-family="'Ubuntu-Bold'" font-size="37">ay</text>
+	<text transform="matrix(1 0 0 1 76.9028 31.7168)" fill="#00BAF2" font-family="'Ubuntu-Bold'" font-size="37">vice</text>
+</g>
+</svg>
