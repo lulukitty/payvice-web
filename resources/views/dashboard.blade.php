@@ -70,8 +70,13 @@
               </div>
 </a>
 </div>
+<<<<<<< HEAD
 {{-- <div class="col-lg-3 col-md-4 col-sm-4 col-xs-12 repadd-grid">
 <a href="#">
+=======
+<div class="col-lg-3 col-md-4 col-sm-4 col-xs-12 repadd-grid">
+<a href="/tran/movie_tickets">
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 <div class="card">
                  <div class="card-body">
                  <img class="logo-ic" src="{{ URL::asset('assets/img/movie-tickets.svg') }}" alt="">
@@ -79,7 +84,11 @@
                 </div>
               </div>
 </a>
+<<<<<<< HEAD
 </div> --}}
+=======
+</div>
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 
 {{-- <div class="col-lg-3 col-md-4 col-sm-4 col-xs-12 repadd-grid">
 <a href="/tran/paybills#billoptiontoll">

@@ -1213,7 +1213,11 @@ body.loaded #preloader{
 						text-align: center;
 						color: #333;
 						background: white;
+<<<<<<< HEAD
 						border-radius: 3px;
+=======
+						border-radius: 10px !important;
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 						margin: 0 auto 5px auto;
 					}
 					/*progressbar connectors*/

@@ -722,6 +722,26 @@ class AccessController extends Controller
 
 	}
 
+<<<<<<< HEAD
+=======
+	public function getMovieTickets(Request $request){
+		$data['UserDetails'] = $this->getUserDetails($request);
+
+		$userEmail = $data['UserDetails']['email'];
+		$walletId = $data['UserDetails']['wallet_id'];
+		// Get Wallet Balance Details
+		$balanceDetails = Account::balance($walletId, $userEmail);
+		$balanceDetails = (array) $balanceDetails;
+		$data['balance'] = number_format($balanceDetails['balance']);
+		$data['commissionBalance'] = number_format($balanceDetails['commission']);
+		// $URI= 'paybills';
+		// return view($URI)->with($data);
+
+		return view('movie-tickets',$data);
+
+	}
+
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 		//HISTORY
 	public function getTrHistory(){
 
@@ -838,6 +858,7 @@ class AccessController extends Controller
 		}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 		public function getSupport(Request $request){
 			$data['UserDetails'] = $this->getUserDetails($request);
@@ -853,6 +874,8 @@ class AccessController extends Controller
 		}
 
 >>>>>>> cb07576dd8260ccd0360d8a936eecad35aac01ef
+=======
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 		public function PTMLtoITEX(Request $request){
 
 			$data = json_decode($request->getContent(), true);
@@ -1749,7 +1772,10 @@ public function lowerAgentWallet(Request $req){
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> cb07576dd8260ccd0360d8a936eecad35aac01ef
+=======
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 }

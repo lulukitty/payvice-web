@@ -51,9 +51,18 @@
 
 							<div class="panel-body paddfform">
 								<div class=" form-group text-center">
+<<<<<<< HEAD
 									<h4>Enter User Details</h4>
 									<p class="medium">Enter a valid email. Your verification code would be sent to the email</p>
 								</div>
+=======
+									<div class="row">
+									<h4 style="font-size:1.5em align-text:center">Enter User Details</h4>
+									<p class="medium text-center" >Enter a valid email. Your verification code would be sent to the email</p>
+									</div>
+								</div>
+
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 								@if(Session::has('accessError'))
 								<div class="alert alert-danger">
 									{{ Session::get('accessError') }}
@@ -62,20 +71,34 @@
 
 								<div class=" form-group">
 
+<<<<<<< HEAD
 									<input class="form-control" type="email" id="newsletter-email" name="email" placeholder="Your Email" data-parsely-type="email" required>
+=======
+									<input style="width:95% padding-left:0" class="form-control" type="email" id="newsletter-email" name="email" placeholder="Your Email" data-parsely-type="email" required>
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 
 								</div>
 
 								<div class=" form-group">
 
+<<<<<<< HEAD
 									<input class="form-control" type="text" id="newsletter-email" name="name" placeholder="Firstname Lastname" required>
+=======
+									<input style="width:95% padding-left:0" class="form-control" type="text" id="newsletter-email" name="name" placeholder="FirstName and Lastname" required>
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 
 								</div>
 
 								<div class="form-group">
+<<<<<<< HEAD
 									<div class="checkbox checkbox-success">
 										<input type="checkbox" class="rel-radio2 marglr10" id="refCheckbox" value="option1">
 										<label class="no-padding no-bg" for="refCheckbox"> Have Referral Code? </label>
+=======
+									<div class="checkbox checkbox-success" style="display:flex">
+											<input type="checkbox" class="rel-radio2 marglr10" id="refCheckbox" value="option1">
+											<label class="no-padding no-bg" for="refCheckbox"> Have Referral Code? </label>
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 									</div>
 								</div>    
 

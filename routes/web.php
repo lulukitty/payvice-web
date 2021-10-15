@@ -51,9 +51,12 @@ Route::post('/transfer-comssmission/process', function () {
 });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> cb07576dd8260ccd0360d8a936eecad35aac01ef
+=======
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 Route::get('/vice/terms-and-conditions', function () {
 	return view('terms');
 });
@@ -84,10 +87,13 @@ Route::get('/vice/connect', function () {
 });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 
 >>>>>>> cb07576dd8260ccd0360d8a936eecad35aac01ef
+=======
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 Route::get('/vice/verify-otp', function () {
 	return view('verify-otp');
 });
@@ -182,12 +188,15 @@ Route::group(['prefix' => 'dashboard', 'middleware' => 'payvice'], function(){
 });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 // support route
 // Route::get('/support', 'AccessController@support');
 
 
 >>>>>>> cb07576dd8260ccd0360d8a936eecad35aac01ef
+=======
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 // Route Group for Webpages
 Route::group(['prefix' => 'tran', 'middleware' => 'payvice'], function(){
 	Route::get('/', 'AccessController@payviceHome');
@@ -198,15 +207,23 @@ Route::group(['prefix' => 'tran', 'middleware' => 'payvice'], function(){
 
 	Route::get('/paybills', 'AccessController@getPayBills');
 
+<<<<<<< HEAD
+=======
+	Route::get('/movie_tickets', 'AccessController@getMovieTickets');
+
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 	Route::get('/account', 'AccessController@getWallet');
 
 	Route::get('/trhistory', 'AccessController@getTrHistory');
 
 	Route::get('/settings', 'AccessController@getUserSettings');
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	Route::get('/support', 'AccessController@getSupport');
 >>>>>>> cb07576dd8260ccd0360d8a936eecad35aac01ef
+=======
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 	Route::get('/reset-pin', 'AccessController@resetTransPin');
 	Route::post('/reset-pin', 'AccessController@newTransPin');
 

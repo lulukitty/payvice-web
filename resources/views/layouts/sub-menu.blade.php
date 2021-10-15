@@ -42,7 +42,11 @@
     		<li><a href="{{url('dashboard/transaction-history')}}"><i class="ion-document-text mr-5 fstyle"></i> History</a></li>
      		<li><a href="{{url('/transfer-commission')}}"><i class="ion-cash mr-5 fstyle"></i>Commision</a></li> 
      		<li><a href="{{url('/tran/settings')}}"><i class="ion-gear-b mr-5 fstyle"></i>Settings</a></li>
+<<<<<<< HEAD
      		<li><a href="{{url('/tran/support')}}"><i class="ion-android-contract mr-5 fstyle"></i>Support</a></li>
+=======
+     		<li><a href="{{url('#')}}"><i class="ion-android-contract mr-5 fstyle"></i>Support</a></li>
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
     		<li><a href="{{url('/vice/disconnect')}}"><i class="ion-locked mr-5 fstyle"></i>Log out</a></li> 
 			
 			</ul>

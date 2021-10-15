@@ -42,6 +42,29 @@ document.body.style.overflowY = 'hidden';
                           </div>
                           </div>
                         <?php } ?>
+<<<<<<< HEAD
+=======
+                        
+
+                        <?php if($_REQUEST['page'] == "billoptionmovietickets") {  ?>
+                          <div class="col-lg-12 fillh" id="billoptionmovietickets">
+                            <div class="mb-30">
+                              <a href="/tran" class="inline"></a>
+                              <h4 class="inline right">Movie Tickets</h4>
+                              <!-- <p>mvbjdhgcvjgvbsdv</p> -->
+                              <hr class="no-margin f-width" />
+                            </div>
+
+                            <div class="">
+                              <div id="alert"></div>
+
+                              <!-- ticket_step_one -->
+                              @include('includes.paybills.show-movie-tickets')
+                            </div>
+                          </div>
+                        <?php } ?>
+
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
 
                         <?php if($_REQUEST['page'] == "billoptionint") {  ?>
                           <div class="col-lg-12 fillh" id="billoptionint">
@@ -165,6 +188,14 @@ document.body.style.overflowY = 'hidden';
     $('#billsteptwo_internet').hide();
     $('#payMethod_internet').hide();
 
+<<<<<<< HEAD
+=======
+    // Movie Tickets
+    $('#billstepone_movie_tickets').hide();
+    $('#billsteptwo_movie_tickets').hide();
+    $('#payMethod_movie_tickets').hide();
+
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
     // Utilities 
     $('#billstepone_utility').hide();
     $('#billsteptwo_utility').hide();
@@ -265,6 +296,34 @@ $('.showToll').click(function() {
       return false;
     });
 
+<<<<<<< HEAD
+=======
+    // MOVIE TICKETS
+// $('.showmovie_tickets').click(function() {
+//       var img = $(this).attr('data-img');
+//       var servImg ="";
+//       var servType = "";
+
+//       switch(img){
+//         case 'lcc':
+//         servImg = 'util_lcc';
+//         servType = "LCC";
+//         $("#utilRoute").html("<input type=\"hidden\" id=\"utilType\" value=\""+servType+"\" />");
+//         break;
+//       }
+
+//       $("#serviceIcon_utility").html("<img id=\"telco_imageb\" style='height: 30px!important; width: 50px!important; margin-left: 3px;' src=\"{{ URL::asset('assets/img') }}/"+servImg+"\">");
+//       $('input[name="utility_unit"]').attr({'readonly': true, 'value': servType}).val(servType).removeAttr('placeholder');
+//       // Show slides
+//       $('#billstepone_toll').fadeIn("slow");
+//       // Hide Others
+//       $('#billstepone_movie_tickets').hide();
+//       $('#billstepone_movie_tickets').hide();
+//       $('#billstepone_cable').hide();
+//       return false;
+//     });
+
+>>>>>>> 457ce7d49e7e84554390407e86f4389abe197130
     //CableTV
       $('.showCableBill').click(function() {
         var img = $(this).attr('data-img');
