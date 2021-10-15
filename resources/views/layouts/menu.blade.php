@@ -27,7 +27,7 @@
   <li><a href="{{url('/tran')}}"><i class="ion-home block fstyle"></i>Home</a></li>
   <li><a href="{{url('/tran/account')}}"><i class="ion-filing block fstyle"></i>Account</a></li>
   <li><a href={{url('/dashboard/transaction-history')}}><i class="ion-document-text block fstyle"></i> History</a></li>
-  <li data-tab="commission-tab" data-target="#commissionAmount"><a href="{{url('/transfer-commission')}}"><i class="ion-cash block fstyle"></i>Commision</a></li> 
+  <li><a href="{{url('/transfer-commission')}}"><i class="ion-cash block fstyle"></i>Commision</a></li> 
   <li><a href="{{url('/tran/settings')}}"><i class="ion-gear-b block fstyle"></i>Settings</a></li>
   <li><a href="{{url('#')}}"><i class="ion-android-contract block fstyle"></i>Support</a></li>
   <li><a href="{{url('/vice/disconnect')}}"><i class="ion-locked block fstyle"></i>Log out</a></li> 

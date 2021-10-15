@@ -20,6 +20,9 @@
 			<li>
             <a href="#"><i class="ion-lock-combination gstyle"></i>Change Transaction Pin</a>
             </li>
+            <li>
+      <a href="#"><i class="ion-lock-combination gstyle"></i>Block Wallet</a>
+      </li>
 			<li>
             <a href="/tran/reset-pin"><i class="ion-unlocked gstyle"></i>Reset Transaction Pin</a>
             @if (isset($resetPinError) && $resetPinError === true ) 
