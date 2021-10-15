@@ -160,15 +160,6 @@
 
 	</script>
 	@endsection
-
-
-
-
-
-
-
-
-
 </div>
 </div>
 @stop

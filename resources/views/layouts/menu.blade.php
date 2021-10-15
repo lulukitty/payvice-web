@@ -29,7 +29,7 @@
   <li><a href={{url('/dashboard/transaction-history')}}><i class="ion-document-text block fstyle"></i> History</a></li>
   <li><a href="{{url('/transfer-commission')}}"><i class="ion-cash block fstyle"></i>Commision</a></li> 
   <li><a href="{{url('/tran/settings')}}"><i class="ion-gear-b block fstyle"></i>Settings</a></li>
-  <li><a href="{{url('#')}}"><i class="ion-android-contract block fstyle"></i>Support</a></li>
+  <li><a href="{{url('/tran/support')}}"><i class="ion-android-contract block fstyle"></i>Support</a></li>
   <li><a href="{{url('/vice/disconnect')}}"><i class="ion-locked block fstyle"></i>Log out</a></li> 
   <!-- <li><a href="{{url('/tran/paybills')}}"><i class="ion-ios-paper-outline block fstyle"></i>Pay Bills</a></li>-->
 </ul>

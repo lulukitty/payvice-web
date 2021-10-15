@@ -837,6 +837,22 @@ class AccessController extends Controller
 
 		}
 
+<<<<<<< HEAD
+=======
+		public function getSupport(Request $request){
+			$data['UserDetails'] = $this->getUserDetails($request);
+			$walletId = $data['UserDetails']['wallet_id'];
+			$userEmail = $data['UserDetails']['email'];
+			// Get Wallet Balance Details
+			$balanceDetails = Account::balance($walletId, $userEmail);
+			$balanceDetails = (array) $balanceDetails;
+			$data['balance'] = number_format($balanceDetails['balance']);
+			$data['commissionBalance'] = number_format($balanceDetails['commission']);
+			return view('support',$data);
+
+		}
+
+>>>>>>> cb07576dd8260ccd0360d8a936eecad35aac01ef
 		public function PTMLtoITEX(Request $request){
 
 			$data = json_decode($request->getContent(), true);
@@ -1732,4 +1748,8 @@ public function lowerAgentWallet(Request $req){
 	}
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> cb07576dd8260ccd0360d8a936eecad35aac01ef
 }

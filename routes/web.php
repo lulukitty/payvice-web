@@ -50,6 +50,10 @@ Route::post('/transfer-comssmission/process', function () {
 	return response()->json($allSent);
 });
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> cb07576dd8260ccd0360d8a936eecad35aac01ef
 Route::get('/vice/terms-and-conditions', function () {
 	return view('terms');
 });
@@ -79,6 +83,11 @@ Route::get('/vice/connect', function () {
 	return view('login');
 });
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> cb07576dd8260ccd0360d8a936eecad35aac01ef
 Route::get('/vice/verify-otp', function () {
 	return view('verify-otp');
 });
@@ -172,6 +181,13 @@ Route::group(['prefix' => 'dashboard', 'middleware' => 'payvice'], function(){
 
 });
 
+<<<<<<< HEAD
+=======
+// support route
+// Route::get('/support', 'AccessController@support');
+
+
+>>>>>>> cb07576dd8260ccd0360d8a936eecad35aac01ef
 // Route Group for Webpages
 Route::group(['prefix' => 'tran', 'middleware' => 'payvice'], function(){
 	Route::get('/', 'AccessController@payviceHome');
@@ -187,6 +203,10 @@ Route::group(['prefix' => 'tran', 'middleware' => 'payvice'], function(){
 	Route::get('/trhistory', 'AccessController@getTrHistory');
 
 	Route::get('/settings', 'AccessController@getUserSettings');
+<<<<<<< HEAD
+=======
+	Route::get('/support', 'AccessController@getSupport');
+>>>>>>> cb07576dd8260ccd0360d8a936eecad35aac01ef
 	Route::get('/reset-pin', 'AccessController@resetTransPin');
 	Route::post('/reset-pin', 'AccessController@newTransPin');
 
